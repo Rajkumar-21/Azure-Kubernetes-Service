@@ -53,21 +53,31 @@ kubectl get all -n prometheus
 
 ```
 To map the port of the pod to check the Prometheus dashboard otherwise you can create a service to expose the pod
+```
 kubectl port-forward -n prometheus prometheus-prometheus-monitor-kube-pr-prometheus-0 9090
+```
 
 In order to login to the Grafana dashboard, username and password are required which can be retrieved by using the below command:
 # Get the Username
+```
 kubectl get secret -n prometheus <prometheus-grafana-podname> -o=jsonpath='{.data.admin-user}' |base64 -d
+```
 
 # Get the Password
+```
 kubectl get secret -n prometheus <prometheus-grafana-podname> -o=jsonpath='{.data.admin-password}' |base64 -d
+```
 Creating service to expose the pod to access it
 Here im using load balancer to check and access the Grafana
+```
 kubectl expose pod prometheus-monitor-grafana-7d59fd4d54-ffjf8 --port=3000 --type=LoadBalancer -n prometheus
+```
 
 # Create Service principle to add the Data Source in Grafana
 
+```
 az ad sp create-for-rbac --name prom-spn--role="Monitoring Reader" --scopes="/subscriptions/my-subscription-id/resourceGroups/myaks-group"
+```
 Save the password and appId and tenantId details to use in Data Source - Grafana
 Login Grafana dashboard from the credentials got from the previous task in decoding the grafana secrets
 
