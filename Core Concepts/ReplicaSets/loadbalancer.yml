@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicaset-loadbalancer-service
+spec:
+  type: LoadBalancer 
+  selector: 
+    app: myapp  # Selecting the RS which container this tag, so it will assign this LB service to the RS
+  ports: 
+    - name: http
+      port: 80
+      targetPort: 80

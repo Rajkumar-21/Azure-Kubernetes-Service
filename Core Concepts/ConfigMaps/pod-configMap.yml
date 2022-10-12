@@ -1,0 +1,38 @@
+# ~/nginx-Pod-with-configmap.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-Pod-with-configmap
+spec:
+  containers:
+   - name: nginx-container-with-configmap-pod
+     image: nginx:latest
+     env:
+       - name: COLOR #Any other name works here.
+         valueFrom:
+           configMapKeyRef:
+             name: my-second-configmap
+             key: color
+
+# kubectl exec Pods/nginx-Pod-with-configmap -- env
+# this will list out the details with the environment present inside the running pod
+
+---
+
+# ~/nginx-Pod-with-configmap-volume.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-Pod-with-configmap-volume
+spec:
+  volumes:
+    - name: configuration-volume
+      configMap:
+        name: my-third-configmap # Configmap name goes here
+  containers:
+   - name: nginx-container-with-configmap
+     image: nginx:latest
+     volumeMounts:
+       - name: configuration-volume # match the volume name
+         mountPath: /etc/conf

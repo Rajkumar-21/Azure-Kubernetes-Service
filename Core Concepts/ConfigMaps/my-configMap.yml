@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-configmap
+data:
+  color: "blue"
+  version: "1"
+  environment: "prod"
+
+---
+# ~/my-second-configmap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-second-configmap
+data:
+  color: "green"
+  configfile.txt: |
+    I'm another configuration file.

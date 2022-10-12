@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: whoami2
+    app: whoami
+  name: whoami2
+spec:
+  containers:
+  - image: containous/whoami
+    name: whoami2
+    ports:
+    - containerPort: 80
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: whoami1
+    app: whoami
+  name: whoami1
+spec:
+  containers:
+  - image: containous/whoami
+    name: whoami1
+    ports:
+    - containerPort: 80
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+
+---
+
+# ~/nodeport-whoami.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodeport-whoami
+spec:
+  type: NodePort
+  selector:
+    app: whoami
+  ports:
+  - nodePort: 30001
+    port: 80
+    targetPort: 80

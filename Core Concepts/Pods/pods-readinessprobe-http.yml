@@ -1,0 +1,16 @@
+# ~/nginx-pod-with-readiness-http.yaml # ~/nginx-pod-with-readiness-http.yaml
+
+apiVersion: v1
+ind: Pod
+metadata:
+  name: nginx-pod-with-readiness-http
+spec:
+  containers:
+  - name: nginx-pod-with-readiness-http
+    image: nginx
+    readinessProbe:  # Defining readiness probe, used to send signal to api-server to say it ready for getting traffic for the pods
+      initialDelaySeconds: 5  # which indicates the number of seconds the probe will wait before running the first health check
+      periodSeconds: 5 # which indicates the number of seconds the probe will wait between two consecutive health checks
+      httpGet: # type of readiness probe
+      path: /ready # check this path and get response >=200 and <400
+      port: 80

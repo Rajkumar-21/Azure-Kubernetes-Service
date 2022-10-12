@@ -1,0 +1,21 @@
+# ~/limitrange.yaml
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: my-limitrange
+spec:
+  limits:
+  - default:
+      memory: 256Mi
+      cpu: 500m
+    defaultRequest:
+      memory: 128Mi
+      cpu: 250Mib
+    max:
+      memory: 1000Mi
+      cpu: 1Gib
+    min:
+      memory: 128Mi
+      cpu: 250m
+    type: Container

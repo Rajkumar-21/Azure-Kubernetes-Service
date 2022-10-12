@@ -1,0 +1,23 @@
+# ~/two-nginx-with-emptydir-Pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: two-containers-with-empty-dir
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:latest
+      volumeMounts:
+      - mountPath: /var/i-am-empty-dir-volume
+        name: hostpath-dir-volume
+    - name: busybox-container
+      image: busybox:latest
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do sleep 30; done;"] # Prevents busybox from exiting after completion
+      volumeMounts:
+      - mountPath: /var/i-am-empty-dir-volume
+        name: hostpath-dir-volume
+  volumes:
+  - name: hostpath-dir-volume # name of the volume
+    hostPath: 
+      path: "/mnt/data"

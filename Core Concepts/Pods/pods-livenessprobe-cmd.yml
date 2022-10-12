@@ -1,0 +1,17 @@
+# ~/nginx-pod-with-liveness-command.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+name: nginx-pod-with-liveness-command
+spec:
+  containers:
+  - name: nginx-pod-with-liveness-command
+  image: nginx
+  livenessProbe:
+    initialDelaySeconds: 5 # wait for intial 5 seconds before it first check
+    periodSeconds: 5 # interval between each checks
+    exec: # defining to mention of using command
+      command:
+      - cat
+      - /hello/world
