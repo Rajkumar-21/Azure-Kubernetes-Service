@@ -1,10 +1,10 @@
 # Steps to implement ***kv2k8s***
 
-```$KEY_VAULT_NAME="mykeyvault210"```
+```$KEY_VAULT_NAME="mykeyvault21"```
 
 ```$RESOURCE_GROUP="myaks-group"```
 
-```$AKS_CLUSTER_NAME="myAKSCluster"```
+```$AKS_CLUSTER_NAME="myAKSCluster1"```
 
 ```$LOCATION="eastus"```
 
@@ -14,7 +14,7 @@
 
 ```$TENANT_ID=az account show --query tenantId```
 
-```$IDENTITY_NAME=myaks-id```
+```$IDENTITY_NAME=myaks-id1```
 
 ---
 # AKS Creation using CLI
