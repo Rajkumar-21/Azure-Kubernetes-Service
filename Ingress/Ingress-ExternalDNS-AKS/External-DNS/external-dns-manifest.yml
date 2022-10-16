@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rajdevopslearn-sc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rajdevopslearn-clusterRole
+rules:
+- apiGroups: [""]
+  resources: ["services","endpoints","pods", "nodes"]
+  verbs: ["get","watch","list"]
+- apiGroups: ["extensions","networking.k8s.io"]
+  resources: ["ingresses"] 
+  verbs: ["get","watch","list"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rajdevopslearn-clusterRoleBinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rajdevopslearn-clusterRole
+subjects:
+- kind: ServiceAccount
+  name: rajdevopslearn-sc
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rajdevopslearn
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: rajdevopslearn
+  template:
+    metadata:
+      labels:
+        app: rajdevopslearn
+    spec:
+      serviceAccountName: rajdevopslearn-sc
+      containers:
+      - name: rajdevopslearn
+        image: k8s.gcr.io/external-dns/external-dns:v0.11.0
+        args:
+        - --source=service
+        - --source=ingress
+        #- --domain-filter=example.com # (optional) limit to only example.com domains; change to match the zone created above.
+        - --provider=azure
+        #- --azure-resource-group=externaldns # (optional) use the DNS zones from the specific resource group
+        volumeMounts:
+        - name: azure-config-file
+          mountPath: /etc/kubernetes
+          readOnly: true
+      volumes:
+      - name: azure-config-file
+        secret:
+          secretName: azure-config-file
