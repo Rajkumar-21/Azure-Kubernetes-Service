@@ -1,8 +1,12 @@
 # Application gateway ingress controller add-on for an existing AKS cluster with an existing application gateway
+$RESOURCE_GROUP="aks-rg"
+$LOCATION="westus"
+$AKS_ClUSTERNAME="myAKSCluster"
 
-$RESOURCE_GROUP=aks-rg
-$LOCATION=westus
-$AKS_ClUSTERNAME=myAKSCluster
+*Create a DNS Zone*
+
+az network dns zone create -g $RESOURCE_GROUP -n rajdevopslearn.online
+
 
 az group create -n $RESOURCE_GROUP -l $LOCATION
 
@@ -16,11 +20,27 @@ az network vnet create -n myVnet -g $RESOURCE_GROUP --address-prefix 10.0.0.0/16
 
 az network application-gateway create -n myApplicationGateway -l $LOCATION -g $RESOURCE_GROUP --sku Standard_v2 --public-ip-address myPublicIp --vnet-name myVnet --subnet mySubnetA --priority 100
 
-# Enabling AGIC add-on in AKS
-
 $appgwId=az network application-gateway show -n myApplicationGateway -g $RESOURCE_GROUP -o tsv --query "id"
 
 az aks enable-addons -n $AKS_ClUSTERNAME -g $RESOURCE_GROUP -a ingress-appgw --appgw-id $appgwId
+
+
+**or**
+
+# Create an ingress controller
+
+```
+# Create a namespace for ingress resources
+kubectl create namespace ingress-basic
+# Add the Helm repository
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+# Use Helm to deploy an NGINX ingress controller
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+    --namespace ingress-basic \
+    --set controller.replicaCount=2
+```
+
 
 # Peer the two virtual networks together
 
@@ -38,15 +58,78 @@ $appGWVnetId=az network vnet show -n myVnet -g $RESOURCE_GROUP -o tsv --query "i
 
 az network vnet peering create -n AKStoAppGWVnetPeering -g $nodeResourceGroup --vnet-name $aksVnetName --remote-vnet $appGWVnetId --allow-vnet-access
 
+or
 
-# Sample Application
+# Create an ingress controller
 
-```kubectl apply -f https://raw.githubusercontent.com/Azure/application-gateway-kubernetes-ingress/master/docs/examples/aspnetapp.yaml```
+```
+# Create a namespace for ingress resources
+kubectl create namespace ingress-basic
+# Add the Helm repository
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+# Use Helm to deploy an NGINX ingress controller
+helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-basic --set controller.replicaCount=2
+```
 
+Setup Permissions
+
+# Assign Variables
+$tenantid=az account show --query tenantId -o tsv
+$subscriptionid=az account show --query id -o tsv
+
+$UserClientId=az aks show --name $AKS_ClUSTERNAME --resource-group $RESOURCE_GROUP --query identityProfile.kubeletidentity.clientId -o tsv
+
+$DNSID=az network dns zone show --name rajdevopslearn.online --resource-group dnszone-rg --query id -o tsv
+
+# Assign managed identity of cluster’s node pools DNS Zone Contributor rights on to Custom Domain DNS zone.
+az role assignment create --assignee $UserClientId --role 'DNS Zone Contributor' --scope $DNSID
+
+# Deploy ExternalDNS
+
+```
+# Add the Helm repository
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+
+# Use Helm to deploy an External DNS
+helm install external-dns bitnami/external-dns --namespace ingress-basic --set provider=azure --set txtOwnerId=aksdemocluster --set policy=sync --set azure.resourceGroup=aksdemocluster-rg --set azure.tenantId=$tenantid --set azure.subscriptionId=$subscriptionid --set azure.useManagedIdentityExtension=true --set azure.userAssignedIdentityID=$UserClientId
+
+```
+
+# Installing cert-manager
+
+# Label the ingress-basic namespace to disable resource validation
+kubectl label namespace ingress-basic cert-manager.io/disable-validation=true
+
+# Add the Jetstack Helm repository
+helm repo add jetstack https://charts.jetstack.io
+
+# Update your local Helm chart repository cache
+helm repo update
+
+# Install the cert-manager Helm chart
+
+```
+helm install cert-manager jetstack/cert-manager --namespace ingress-basic --version v1.8.2 --set installCRDs=true
+```
+In order to begin issuing certificates, you will need to set up a ClusterIssuer
+or Issuer resource (for example, by creating a 'letsencrypt-staging' issuer).
+
+More information on the different types of issuers and how to configure them
+can be found in our documentation:
+
+https://cert-manager.io/docs/configuration/
+
+For information on how to configure cert-manager to automatically provision
+Certificates for Ingress resources, take a look at the `ingress-shim`
+documentation:
+
+https://cert-manager.io/docs/usage/ingress/
 # Create a DNS Zone for custom Domain
 
 **Using Azure CLI***
-az network dns zone create -g aksdemocluster-rg -n rajdevopslearn.online
+az network dns zone create -g dnszone-rg -n rajdevopslearn.online
 
 or
 
@@ -78,7 +161,7 @@ Opem MSI -> <ResourceName>
 Click on Azure Role Assignments -> Add role assignment
 Scope: Resource group
 Subscription: Pay-as-you-go
-Resource group: dns-rg
+Resource group: dnszone-rg
 Role: Contributor
 Make a note of Client Id and update in azure.json
 Go to Overview -> Make a note of **Client ID"
@@ -89,6 +172,16 @@ Update in azure.json value for userAssignedIdentityID
 Go to All Services -> Virtual Machine Scale Sets (VMSS) -> Open aksdemo1 related VMSS (aks-agentpool-**********-vmss)
 
 Go to Settings -> Identity -> User assigned -> Add -> <ResourceName>
+
+
+
+
+
+# Verify Cert Manager pods
+kubectl get pods --namespace ingress-basic
+
+# Verify Cert Manager Services
+kubectl get svc --namespace ingress-basic
 
 # creating secret config from file
 
